@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>81-Abohar A.C. Election Route Plan</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Leaflet CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+    
+    <!-- html2canvas for JPG Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <!-- SheetJS for Runtime Excel Loading -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <style>
+        :root {
+            --primary-blue: #274c77;
+            --accent-yellow: #fde047;
+            --route-blue: #1e60c0;
+            --start-green: #16a34a;
+            --halt-red: #dc2626;
+            --bg-light: #f3f4f6;
+        }
+
+        html { margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; width: 100vw; height: 100vh; overflow: hidden; }
+        
+        body { display: flex; align-items: center; justify-content: center; background: #333; margin: 0; height: 100vh; width: 100vw;}
+        
+        #export-container {
+            width: 1024px !important;
+            height: 768px !important;
+            position: relative;
+            background: #e5e7eb;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            transform-origin: center center;
+        }
+        
+        #map { width: 100%; height: 100%; z-index: 1; }
+
+        .top-header { position: absolute; top: 0; left: 0; width: 100%; background: linear-gradient(to bottom, #5b7da6, #3b5d8a); color: white; text-align: center; padding: 10px 14px; z-index: 1000; box-sizing: border-box; border-bottom: 2px solid white; pointer-events: none; }
+        .top-header h1 { margin: 0; font-size: 22px; font-weight: 900; letter-spacing: 1px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5); }
+        .top-header h2 { margin: 5px 0 0 0; font-size: 13px; color: var(--accent-yellow); font-weight: 600; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
+
+        .compass { position: absolute; top: 60px; right: 14px; width: 42px; z-index: 1000; pointer-events: none; }
+
+        .legend-panel { position: absolute; top: 110px; right: 14px; background: white; border-radius: 6px; width: 168px; z-index: 1000; box-shadow: 0 3px 8px rgba(0,0,0,0.2); border: 2px solid var(--primary-blue); overflow: hidden; pointer-events: none; }
+        .legend-header { background: var(--primary-blue); color: white; text-align: center; padding: 5px; font-size: 13px; font-weight: bold; }
+        .legend-content { padding: 8px; font-size: 10px; }
+        .legend-item { display: flex; align-items: center; margin-bottom: 10px; }
+        .legend-icon { width: 17px; height: 17px; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 9px; margin-right: 8px; border: 1px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+
+        .summary-panel { position: absolute; bottom: 14px; right: 14px; top: auto; left: auto; background: #dbeafe; border-radius: 8px; padding: 10px 14px; width: 168px; box-sizing: border-box; z-index: 1000; box-shadow: 0 3px 8px rgba(0,0,0,0.2); border: 2px solid #93c5fd; font-size: 12px; line-height: 1.4; color: #1e3a8a; display: none; pointer-events: none; }
+        .summary-panel b { color: #111827; }
+
+        #control-panel { position: absolute; top: 12px; left: 12px; background: white; border-radius: 8px; width: 298px; z-index: 2000; box-shadow: 0 4px 12px rgba(0,0,0,0.3); padding: 12px; border: 1px solid #ccc; max-height: 90vh; overflow-y: auto;}
+        
+        /* The control panel is absolute to the WINDOW, not the export-container, so it isn't scaled or exported */
+        
+        .control-group { margin-bottom: 15px; }
+        .control-group label { display: block; font-weight: bold; font-size: 12.5px; margin-bottom: 4px; }
+        .control-group select, .control-group input[type="file"] { width: 100%; padding: 6px; box-sizing: border-box; font-size: 12.5px; cursor: pointer; }
+        .btn-export { background: #059669; color: white; border: none; padding: 9px; width: 100%; font-weight: bold; border-radius: 5px; cursor: pointer; font-size: 14px; margin-top: 9px; }
+        .btn-export:hover { background: #047857; }
+
+        .custom-div-icon { background: transparent; border: none; z-index: 500 !important; cursor: grab; }
+        .custom-div-icon:active { cursor: grabbing; }
+        .marker-circle { width: 22px; height: 22px; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 11px; border: 1.5px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+        .leg-info-badge { background: var(--route-blue); color: white; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 14px; white-space: nowrap; box-shadow: 0 2px 5px rgba(0,0,0,0.3); border: 1px solid white; }
+        
+        .booth-card { background: #dbeafe; border: 1px solid #93c5fd; border-radius: 4px; padding: 6px; text-align: center; box-shadow: 0 3px 6px rgba(0,0,0,0.3); white-space: nowrap; }
+        .booth-card-title { font-size: 10px; color: #1e3a8a; margin-bottom: 4px; font-weight: 800; white-space: nowrap; line-height: 1.2;}
+        .booth-numbers { display: flex; gap: 4px; justify-content: center; flex-wrap: nowrap; align-items: center;}
+        .booth-num { background: var(--halt-red); color: white; padding: 2px 4px; border-radius: 3px; font-weight: bold; font-size: 10px; }
+        .leaflet-tooltip { background: transparent; border: none; box-shadow: none; padding: 0; }
+    </style>
+</head>
+<body>
+
+<div id="control-panel">
+    <div class="control-group" style="background: #eff6ff; padding: 10px; border-radius: 6px; border: 1px dashed #3b82f6;">
+        <label>1. Upload Excel File:</label>
+        <input type="file" id="excelFile" accept=".xlsx, .xls" onchange="handleExcelUpload(event)">
+    </div>
+
+    <div class="control-group">
+        <label>2. Select Route Plan:</label>
+        <select id="routeSelect" onchange="drawRoute(this.value)" disabled>
+            <option value="">-- Waiting for Excel file... --</option>
+        </select>
+    </div>
+    
+    <div class="control-group" style="margin-top: 15px; margin-bottom: 5px;">
+        <label style="display: flex; align-items: center; gap: 6px; font-weight: normal; cursor: pointer;">
+            <input type="checkbox" id="optimizeRoute" onchange="drawRoute(document.getElementById('routeSelect').value)" checked>
+            Find Shortest Route (Auto-sort Stops)
+        </label>
+        <label style="display: flex; align-items: center; gap: 6px; font-weight: normal; cursor: pointer; margin-top: 8px;">
+            <input type="checkbox" id="viaHanumangarh" onchange="drawRoute(document.getElementById('routeSelect').value)" checked>
+            Guide Via Hanumangarh Road
+        </label>
+    </div>
+    
+    <div class="control-group" style="margin-top: 10px; text-align: center;">
+        <span style="font-size: 14px; color: #dc2626; font-weight: bold; background: #fee2e2; padding: 5px 10px; border-radius: 5px; display: inline-block;">
+            💡 Wrong location? Drag any marker to move it.
+        </span>
+    </div>
+
+    <button class="btn-export" onclick="exportToJPG()">📷 Save SD JPG (1024x768)</button>
+</div>
+
+<div id="export-container">
+    <div class="top-header">
+        <h1 id="lblRouteTitle">81-Abohar Election 2027</h1>
+        <h2 id="lblRoutePath">Load Excel file to begin route planning</h2>
+    </div>
+
+    <div class="compass">
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <polygon points="50,5 65,45 50,55 35,45" fill="#dc2626" />
+            <polygon points="50,95 65,55 50,45 35,55" fill="#e5e7eb" />
+            <text x="50" y="12" font-size="16" font-family="Arial" font-weight="bold" fill="white" text-anchor="middle">N</text>
+            <text x="50" y="98" font-size="14" font-family="Arial" font-weight="bold" fill="black" text-anchor="middle">S</text>
+            <text x="8" y="55" font-size="14" font-family="Arial" font-weight="bold" fill="black">W</text>
+            <text x="82" y="55" font-size="14" font-family="Arial" font-weight="bold" fill="black">E</text>
+        </svg>
+    </div>
+
+    <div class="legend-panel">
+        <div class="legend-header">Legend</div>
+        <div class="legend-content">
+            <div class="legend-item">
+                <div class="legend-icon" style="background: var(--start-green);">S</div>
+                <span>Starting station</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-icon" style="background: var(--route-blue);">1</div>
+                <span>Intermediate station</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-icon" style="background: var(--halt-red); border-radius: 50% 50% 50% 0; transform: rotate(-45deg);"><span style="transform: rotate(45deg);">2</span></div>
+                <span>Final stop of route</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="summary-panel" id="summaryPanel">
+        <b>Total Distance:</b> <span id="lblDist">0 km</span><br>
+        <b>Total Time:</b> <span id="lblTime">0 min</span><br>
+        <b>No. of Villages:</b> <span id="lblVills">0</span><br>
+        <b>No. of Parties:</b> <span id="lblParties">0</span>
+    </div>
+
+    <div id="map"></div>
+</div>
+
+
+<script>
+    // --- Scale the 1024x768 Container to fit the screen visually ---
+    function resizeContainer() {
+        const container = document.getElementById('export-container');
+        // Calculate scale factor (leaving some padding for the new wider control panel)
+        const scale = Math.min((window.innerWidth - 350) / 1024, (window.innerHeight - 40) / 768);
+        if (scale < 1.25) {
+            container.style.transform = `scale(${scale})`;
+        } else {
+             container.style.transform = `scale(1.25)`; // Magnify map on screen by 125%
+        }
+    }
+    window.addEventListener('resize', resizeContainer);
+    window.addEventListener('load', resizeContainer);
+
+
+    let routesData = [];
+    let manualCorrections = {}; 
+
+    const dispatchCenter = [30.133217856064057, 74.20811582791919];
+    const hanumangarhRoadPoint = [30.1190, 74.1980];
+    
+    const map = L.map('map', { zoomControl: false, attributionControl: false, preferCanvas: true }).setView(dispatchCenter, 14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, crossOrigin: true }).addTo(map);
+
+    let currentLayerGroup = L.layerGroup().addTo(map);
+
+    function handleExcelUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        let select = document.getElementById('routeSelect');
+        select.innerHTML = '<option value="">Processing Excel File...</option>';
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                
+                // Read as 2D Array for max robustness
+                let rawData = XLSX.utils.sheet_to_json(worksheet, {header: 1, defval: ""});
+                
+                let headerIdx = -1;
+                let headers = [];
+                
+                // Scan first 15 rows to find the actual table header
+                for (let i = 0; i < Math.min(15, rawData.length); i++) {
+                    let rowStr = rawData[i].map(String).join("").toLowerCase();
+                    if (rowStr.includes("route no") && (rowStr.includes("booth") || rowStr.includes("parties"))) {
+                        headerIdx = i;
+                        headers = rawData[i].map(h => String(h).trim().replace(/\n/g, ' '));
+                        break;
+                    }
+                }
+
+                if (headerIdx === -1) {
+                    alert("Error: Could not find 'Route No' column in the uploaded Excel file.");
+                    select.innerHTML = '<option value="">-- Invalid File Format --</option>';
+                    return;
+                }
+
+                routesData = [];
+                for (let i = headerIdx + 1; i < rawData.length; i++) {
+                    let row = rawData[i];
+                    let rowObj = {};
+                    
+                    headers.forEach((h, idx) => {
+                        rowObj[h] = row[idx] !== undefined && row[idx] !== null ? String(row[idx]) : "";
+                    });
+
+                    const getVal = (possibleKeys) => {
+                        const key = Object.keys(rowObj).find(k => possibleKeys.some(pk => k.toLowerCase().replace(/\s+/g, ' ').includes(pk)));
+                        return key ? String(rowObj[key]) : '';
+                    };
+
+                    let routeVal = getVal(['route no.', 'route no', 'route']);
+                    
+                    if (routeVal && routeVal.trim() !== '' && routeVal.toLowerCase().substring(0,7) !== 'reserve') {
+                        routesData.push({
+                            route: routeVal.trim(),
+                            booth: getVal(['polling booth no. & name', 'booth', 'booth name']),
+                            parties: getVal(['no. of parties', 'parties']),
+                            buses: getVal(['route of buses', 'buses']),
+                            halt: getVal(['halt']),
+                            locations: getVal(['locations / coordinates', 'locations', 'coordinates', 'location'])
+                        });
+                    }
+                }
+
+                if (routesData.length === 0) {
+                    alert("No valid routes found in the file.");
+                    select.innerHTML = '<option value="">-- No Routes Found --</option>';
+                    return;
+                }
+
+                select.disabled = false;
+                select.innerHTML = '<option value="">-- Choose Route Plan --</option>';
+                routesData.forEach(r => {
+                    let opt = document.createElement('option');
+                    opt.value = r.route;
+                    opt.textContent = `${r.route} — ${r.halt} (${parseFloat(r.parties) || 0} parties)`;
+                    select.appendChild(opt);
+                });
+
+                document.getElementById('lblRoutePath').innerHTML = `<b>Success:</b> Loaded ${routesData.length} routes from file. Please select a route.`;
+                
+            } catch (err) {
+                console.error(err);
+                alert("Error reading Excel file. Make sure it's a valid .xlsx file.");
+                select.innerHTML = '<option value="">-- Error parsing file --</option>';
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    function getBoothNumbers(str) {
+        let matches = String(str).match(/\d{2,3}(?:-\d{2,3})*/g);
+        if(!matches) return [];
+        let nums = [];
+        matches.forEach(m => { nums = nums.concat(m.split('-')); });
+        return nums;
+    }
+
+    async function fetchWithTimeout(url) {
+        const controller = new AbortController();
+        const id = setTimeout(() => controller.abort(), 2000);
+        const response = await fetch(url, { signal: controller.signal });
+        clearTimeout(id);
+        return response;
+    }
+
+    async function drawRoute(routeId) {
+        currentLayerGroup.clearLayers();
+        if (!routeId) {
+            document.getElementById('summaryPanel').style.display = 'none';
+            document.getElementById('lblRouteTitle').textContent = "81-Abohar Election 2027";
+            document.getElementById('lblRoutePath').textContent = "Select a route plan from the control panel to view details";
+            map.setView(dispatchCenter, 14);
+            return;
+        }
+
+        let found = routesData.find(r => r.route === routeId);
+        if (!found) return;
+
+        let rawBooths = String(found.booth).replace(/\n/g, '|');
+        let boothParts = rawBooths.split('|').map(b => b.trim()).filter(b => b.length > 0);
+        if (boothParts.length === 0) boothParts = [found.halt];
+
+        document.getElementById('lblRouteTitle').textContent = `Route No. ${found.route}`;
+        document.getElementById('lblRoutePath').innerHTML = `<i>Rendering mapped locations...</i>`;
+        document.getElementById('lblParties').textContent = parseFloat(found.parties) || 0;
+        document.getElementById('lblVills').textContent = `1 (${found.halt})`;
+        document.getElementById('summaryPanel').style.display = 'block';
+        
+        let coordsList = [];
+        let locationStr = String(found.locations);
+        let matches = locationStr.match(/\(([^,]+),\s*([^)]+)\)/g);
+        if (matches) {
+            matches.forEach(m => {
+                let parts = m.replace(/[()]/g, '').split(',');
+                if (parts.length === 2) {
+                    coordsList.push([parseFloat(parts[0].trim()), parseFloat(parts[1].trim())]);
+                }
+            });
+        }
+        
+        let displayNames = [];
+        let stopData = [];
+        let lastValidAnchor = null;
+
+        for(let i = 0; i < boothParts.length; i++) {
+            let lat = null, lng = null;
+            let rawName = (i === boothParts.length - 1 && !boothParts[i]) ? found.halt : boothParts[i];
+            
+            let boothNameDisplay = boothParts[i].replace(/^[0-9-\s]+/, '').replace(/[,\s|]+$/, '').trim();
+            if (!boothNameDisplay && i === boothParts.length - 1) boothNameDisplay = found.halt;
+            if (!boothNameDisplay) boothNameDisplay = "Booth";
+            
+            displayNames.push(boothNameDisplay);
+            
+            let isManual = !!manualCorrections[boothParts[i]];
+            if (isManual) {
+                lat = manualCorrections[boothParts[i]][0];
+                lng = manualCorrections[boothParts[i]][1];
+            } else if (i < coordsList.length) {
+                lat = coordsList[i][0];
+                lng = coordsList[i][1];
+                lastValidAnchor = [lat, lng];
+            } else {
+                if (lastValidAnchor) {
+                    lat = lastValidAnchor[0];
+                    lng = lastValidAnchor[1];
+                } else if (coordsList.length > 0) {
+                    lat = coordsList[0][0];
+                    lng = coordsList[0][1];
+                }
+            }
+            
+            if (lat === null || lng === null) {
+                let nameLower = rawName.toLowerCase();
+                if (nameLower.includes("old fazilka road")) { lat = 30.1450; lng = 74.1920; } 
+                else if (nameLower.includes("fazilka road")) { lat = 30.1650; lng = 74.1850; } 
+                else if (nameLower.includes("hanumangarh road")) { lat = 30.1190; lng = 74.1980; } 
+                else if (nameLower.includes("ganganagar road")) { lat = 30.1220; lng = 74.1750; } 
+                else if (nameLower.includes("sitto road") || nameLower.includes("sito road")) { lat = 30.1150; lng = 74.2150; } 
+                else if (nameLower.includes("kandwala road")) { lat = 30.1550; lng = 74.2250; }
+                else {
+                    lat = dispatchCenter[0];
+                    lng = dispatchCenter[1];
+                }
+            }
+
+            stopData.push({ 
+                coords: [lat, lng], 
+                originalName: boothParts[i], 
+                displayName: boothNameDisplay, 
+                isFinal: (i === boothParts.length - 1),
+                isManual: isManual
+            });
+        }
+
+        let usedCoords = [[dispatchCenter[0], dispatchCenter[1]]];
+        for (let s of stopData) {
+            if (s.isManual) {
+                usedCoords.push([...s.coords]);
+                continue;
+            }
+            let collision = true;
+            let scatterRadius = 0.005; // Base radius for scattering
+            let attempts = 0;
+            let originalLat = s.coords[0];
+            let originalLng = s.coords[1];
+            let isShifted = false;
+            
+            while (collision && attempts < 30) {
+                collision = false;
+                for (let uc of usedCoords) {
+                    let dist = Math.sqrt(Math.pow(s.coords[0] - uc[0], 2) + Math.pow(s.coords[1] - uc[1], 2));
+                    if (dist < 0.005) { 
+                        collision = true;
+                        isShifted = true;
+                        let a = attempts * (Math.PI / 4); // Fanning out in 8 directions around the center
+                        s.coords[0] = originalLat + (scatterRadius * Math.cos(a));
+                        s.coords[1] = originalLng + (scatterRadius * Math.sin(a));
+                        attempts++;
+                        if (attempts % 8 === 0) {
+                            scatterRadius += 0.0025; // Expand ring outward
+                        }
+                        break;
+                    }
+                }
+            }
+            if (isShifted) {
+                s.shiftedFrom = [originalLat, originalLng];
+            }
+            usedCoords.push([...s.coords]);
+        }
+
+        if (document.getElementById('optimizeRoute').checked && stopData.length > 1) {
+            let optimizedStops = [];
+            let unvisited = [...stopData];
+            let currentCoords = dispatchCenter;
+            
+            while(unvisited.length > 0) {
+                unvisited.sort((a, b) => {
+                    let distA = Math.pow(a.coords[0] - currentCoords[0], 2) + Math.pow(a.coords[1] - currentCoords[1], 2);
+                    let distB = Math.pow(b.coords[0] - currentCoords[0], 2) + Math.pow(b.coords[1] - currentCoords[1], 2);
+                    return distA - distB;
+                });
+                let nextStop = unvisited.shift();
+                optimizedStops.push(nextStop);
+                currentCoords = nextStop.coords;
+            }
+            optimizedStops.forEach((s, idx) => s.isFinal = (idx === optimizedStops.length - 1));
+            stopData = optimizedStops;
+        }
+
+        L.marker(dispatchCenter, {
+            icon: L.divIcon({ className: 'custom-div-icon', html: `<div class="marker-circle" style="background: var(--start-green);">S</div>`, iconSize: [22, 22] })
+        }).bindTooltip("<b>S - DAV College of Education</b>", {permanent: true, direction: "bottom", className: "leaflet-tooltip", offset: [0, 15]}).addTo(currentLayerGroup);
+
+        let pathString = `DAV College of Education &rarr; `;
+        let osrmCoordinates = [dispatchCenter];
+
+        for(let i = 0; i < stopData.length; i++) {
+            let stop = stopData[i];
+            osrmCoordinates.push(stop.coords);
+            
+            let nums = getBoothNumbers(stop.originalName);
+            let numHtml = nums.map(n => `<div class="booth-num">${n}</div>`).join('');
+            
+            let dirs = ["top", "bottom", "right", "left"];
+            let tDir = dirs[i % 4];
+            let tOff = [0, 0];
+            if (tDir === "right") tOff = [15, 0];
+            if (tDir === "left") tOff = [-15, 0];
+            if (tDir === "top") tOff = [0, -15];
+            if (tDir === "bottom") tOff = [0, 15];
+            
+            let htmlStr = "";
+            let markerHtml = "";
+
+            if (stop.isFinal) {
+                htmlStr = `<div class="booth-card" style="border: 2px solid #ef4444; background: #fef2f2;">
+                    <div class="booth-card-title" style="color: #991b1b;">${stop.displayName}</div>
+                    <div class="booth-numbers">
+                        ${numHtml}
+                        <div style="background: #ef4444; color: white; padding: 3px 6px; border-radius: 4px; font-weight: bold; font-size: 10px; margin-left: 4px; padding: 2px 4px;">Final Stop</div>
+                    </div>
+                </div>`;
+                pathString += `${stop.displayName} (${nums.join('-')})`;
+                markerHtml = `<div class="marker-circle" style="background: var(--halt-red); border-radius: 50% 50% 50% 0; transform: rotate(-45deg);"><span style="transform: rotate(45deg);">${i+1}</span></div>`;
+            } else {
+                htmlStr = `<div class="booth-card">
+                    <div class="booth-card-title">${stop.displayName}</div>
+                    <div class="booth-numbers">${numHtml}</div>
+                </div>`;
+                pathString += `Stop ${i+1} &rarr; `;
+                markerHtml = `<div class="marker-circle" style="background: var(--route-blue);">${i+1}</div>`;
+            }
+
+            if (stop.shiftedFrom) {
+                // Draw dotted line to original location
+                L.polyline([stop.shiftedFrom, stop.coords], {color: '#4b5563', weight: 2, dashArray: '4,4', opacity: 0.8}).addTo(currentLayerGroup);
+                // Draw small anchor point
+                L.circleMarker(stop.shiftedFrom, {radius: 3, color: '#1e3a8a', fillColor: '#fff', fillOpacity: 1, weight: 2}).addTo(currentLayerGroup);
+            }
+
+            let dragger = L.marker(stop.coords, {
+                draggable: true,
+                icon: L.divIcon({ className: 'custom-div-icon', html: markerHtml, iconSize: [22, 22] })
+            }).bindTooltip(htmlStr, {permanent: true, direction: tDir, className: "leaflet-tooltip", offset: tOff}).addTo(currentLayerGroup);
+
+            dragger.on('dragend', function(event) {
+                let position = event.target.getLatLng();
+                manualCorrections[stop.originalName] = [position.lat, position.lng];
+                drawRoute(document.getElementById('routeSelect').value);
+            });
+        }
+
+        document.getElementById('lblRoutePath').innerHTML = pathString;
+
+        let drivingPoints = [...osrmCoordinates];
+        if (document.getElementById('viaHanumangarh').checked && stopData.length > 0) {
+            drivingPoints.splice(1, 0, hanumangarhRoadPoint); 
+        }
+
+        let coordsStr = drivingPoints.map(s => s[1] + ',' + s[0]).join(';');
+        try {
+            let res = await fetchWithTimeout(`https://router.project-osrm.org/route/v1/driving/${coordsStr}?overview=full&geometries=geojson`);
+            let data = await res.json();
+            if (data.routes && data.routes.length > 0) {
+                let route = data.routes[0];
+                let rCoords = route.geometry.coordinates.map(c => [c[1], c[0]]);
+                let polyline = L.polyline(rCoords, { color: '#1e60c0', weight: 8, opacity: 0.9 }).addTo(currentLayerGroup);
+                map.fitBounds(polyline.getBounds(), {padding: [150, 150]});
+
+                document.getElementById('lblDist').textContent = `~${(route.distance / 1000).toFixed(1)} km`;
+                document.getElementById('lblTime').textContent = `~${Math.round(route.duration / 60)} min`;
+            }
+        } catch (e) {
+            let fallback = L.polyline(osrmCoordinates, { color: '#1e60c0', weight: 8, opacity: 0.9 }).addTo(currentLayerGroup);
+            map.fitBounds(fallback.getBounds(), {padding: [150, 150]});
+            document.getElementById('lblDist').textContent = `N/A`;
+            document.getElementById('lblTime').textContent = `N/A`;
+        }
+    }
+
+    function exportToJPG() {
+        let exportContainer = document.getElementById('export-container');
+        
+        // Remove the CSS scale transform temporarily so html2canvas renders at exact 1024x768
+        let currentTransform = exportContainer.style.transform;
+        exportContainer.style.transform = 'none';
+        
+        // Force the map to refresh its tiles for the unscaled 1024x768 size
+        map.invalidateSize();
+
+        setTimeout(() => {
+            html2canvas(exportContainer, { 
+                useCORS: true, 
+                scale: 2, 
+                width: 1024, 
+                height: 768,
+                backgroundColor: "#e5e7eb"
+            }).then(canvas => {
+                let link = document.createElement('a');
+                let routeName = document.getElementById('routeSelect').value || "Map";
+                link.download = `Route_${routeName}_SD_4x3.jpg`;
+                link.href = canvas.toDataURL('image/jpeg', 0.95);
+                link.click();
+                
+                // Restore the CSS scale
+                exportContainer.style.transform = currentTransform;
+                map.invalidateSize();
+            });
+        }, 500); // Give Leaflet a half-second to load any missing tiles before capture
+    }
+</script>
+</body>
+</html>
