@@ -1,7 +1,7 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-st.set_page_config(layout="wide", page_title="Sector Officer Route Map")
+st.set_page_config(layout="wide", page_title="Bus Route Map")
 
 # 1. Read the HTML file directly from the repository
 with open("Larger_UI_Map_App.html", "r", encoding="utf-8") as map_file:
