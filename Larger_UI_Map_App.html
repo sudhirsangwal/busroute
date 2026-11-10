@@ -25,46 +25,136 @@
             --bg-light: #f3f4f6;
         }
 
-        html { margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; width: 100vw; height: 100vh; overflow: hidden; }
+        html, body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; width: 100vw; height: 100vh; overflow: hidden; }
         
-        body { display: flex; align-items: center; justify-content: center; background: #333; margin: 0; height: 100vh; width: 100vw;}
+        body { display: flex; flex-direction: row; align-items: stretch; background: #fff; }
         
+        /* NEW LAYOUT: SIDEBAR */
+        #sidebar {
+            width: 320px;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            padding: 25px 20px;
+            border-right: 1px solid #e2e8f0;
+            z-index: 2000;
+        }
+
+        .sidebar-title {
+            color: #274c77;
+            font-size: 18px;
+            font-weight: 700;
+            margin: 0 0 20px 0;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .control-group { margin-bottom: 20px; }
+        .control-group label { display: block; font-weight: 600; font-size: 12px; margin-bottom: 8px; color: #1e293b; }
+        .control-group select, .control-group input[type="file"] { width: 100%; padding: 8px; box-sizing: border-box; font-size: 12px; cursor: pointer; border: 1px solid #cbd5e1; border-radius: 4px; }
+        
+        /* Specific Box Styles based on image */
+        .box-dashed-blue {
+            background: #f8fafc;
+            border: 1px dashed #3b82f6;
+            padding: 12px;
+            border-radius: 6px;
+        }
+        
+        .box-solid-gray {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 12px;
+            border-radius: 6px;
+        }
+
+        .box-tip {
+            font-size: 12px;
+            color: #b91c1c;
+            font-weight: bold;
+            background: #fef2f2;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+        }
+        
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: normal;
+            font-size: 12px;
+            cursor: pointer;
+            margin-bottom: 8px;
+            color: #334155;
+        }
+        .checkbox-row:last-child { margin-bottom: 0; }
+
+        .buttons-container {
+            margin-top: auto; /* pushes to bottom */
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .btn {
+            color: white;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .btn-blue { background: #6366f1; }
+        .btn-blue:hover { background: #4f46e5; }
+        
+        .btn-green { background: #10b981; }
+        .btn-green:hover { background: #059669; }
+
+        /* NEW LAYOUT: MAIN AREA */
+        #main-area {
+            flex: 1;
+            background: #475569; /* Slate grey from image */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
         #export-container {
             width: 1024px !important;
             height: 768px !important;
             position: relative;
             background: #e5e7eb;
             overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
             transform-origin: center center;
         }
         
         #map { width: 100%; height: 100%; z-index: 1; }
 
+        /* Map overlays */
         .top-header { position: absolute; top: 0; left: 0; width: 100%; background: linear-gradient(to bottom, #5b7da6, #3b5d8a); color: white; text-align: center; padding: 10px 14px; z-index: 1000; box-sizing: border-box; border-bottom: 2px solid white; pointer-events: none; }
-        .top-header h1 { margin: 0; font-size: 22px; font-weight: 900; letter-spacing: 1px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5); }
-        .top-header h2 { margin: 5px 0 0 0; font-size: 13px; color: var(--accent-yellow); font-weight: 600; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
+        .top-header h1 { margin: 0; font-size: 26px; font-weight: 900; letter-spacing: 1px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5); }
+        .top-header h2 { margin: 5px 0 0 0; font-size: 14px; color: var(--accent-yellow); font-weight: 600; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
 
-        .compass { position: absolute; top: 60px; right: 14px; width: 42px; z-index: 1000; pointer-events: none; }
+        .compass { position: absolute; top: 10px; right: 14px; width: 42px; z-index: 1001; pointer-events: none; }
 
-        .legend-panel { position: absolute; top: 110px; right: 14px; background: white; border-radius: 6px; width: 168px; z-index: 1000; box-shadow: 0 3px 8px rgba(0,0,0,0.2); border: 2px solid var(--primary-blue); overflow: hidden; pointer-events: none; }
+        .legend-panel { position: absolute; top: 80px; right: 14px; background: white; border-radius: 6px; width: 168px; z-index: 1000; box-shadow: 0 3px 8px rgba(0,0,0,0.2); border: 2px solid var(--primary-blue); overflow: hidden; pointer-events: none; }
         .legend-header { background: var(--primary-blue); color: white; text-align: center; padding: 5px; font-size: 13px; font-weight: bold; }
         .legend-content { padding: 8px; font-size: 10px; }
         .legend-item { display: flex; align-items: center; margin-bottom: 10px; }
         .legend-icon { width: 17px; height: 17px; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 9px; margin-right: 8px; border: 1px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
 
-        .summary-panel { position: absolute; bottom: 14px; right: 14px; top: auto; left: auto; background: #dbeafe; border-radius: 8px; padding: 10px 14px; width: 168px; box-sizing: border-box; z-index: 1000; box-shadow: 0 3px 8px rgba(0,0,0,0.2); border: 2px solid #93c5fd; font-size: 12px; line-height: 1.4; color: #1e3a8a; display: none; pointer-events: none; }
+        .summary-panel { position: absolute; bottom: 14px; right: 14px; background: #dbeafe; border-radius: 8px; padding: 10px 14px; width: 168px; box-sizing: border-box; z-index: 1000; box-shadow: 0 3px 8px rgba(0,0,0,0.2); border: 2px solid #93c5fd; font-size: 12px; line-height: 1.4; color: #1e3a8a; display: none; pointer-events: none; }
         .summary-panel b { color: #111827; }
-
-        #control-panel { position: absolute; top: 12px; left: 12px; background: white; border-radius: 8px; width: 298px; z-index: 2000; box-shadow: 0 4px 12px rgba(0,0,0,0.3); padding: 12px; border: 1px solid #ccc; max-height: 90vh; overflow-y: auto;}
-        
-        /* The control panel is absolute to the WINDOW, not the export-container, so it isn't scaled or exported */
-        
-        .control-group { margin-bottom: 15px; }
-        .control-group label { display: block; font-weight: bold; font-size: 12.5px; margin-bottom: 4px; }
-        .control-group select, .control-group input[type="file"] { width: 100%; padding: 6px; box-sizing: border-box; font-size: 12.5px; cursor: pointer; }
-        .btn-export { background: #059669; color: white; border: none; padding: 9px; width: 100%; font-weight: bold; border-radius: 5px; cursor: pointer; font-size: 14px; margin-top: 9px; }
-        .btn-export:hover { background: #047857; }
 
         .custom-div-icon { background: transparent; border: none; z-index: 500 !important; cursor: grab; }
         .custom-div-icon:active { cursor: grabbing; }
@@ -80,96 +170,103 @@
 </head>
 <body>
 
-<div id="control-panel">
-    <div class="control-group" style="background: #eff6ff; padding: 10px; border-radius: 6px; border: 1px dashed #3b82f6;">
-        <label>1. Upload Excel File:</label>
+<!-- SIDEBAR CONTROLS -->
+<div id="sidebar">
+    <h2 class="sidebar-title">Route Settings</h2>
+    
+    <div class="control-group box-dashed-blue">
+        <label>1. Upload Route Plan Excel:</label>
         <input type="file" id="excelFile" accept=".xlsx, .xls" onchange="handleExcelUpload(event)">
     </div>
 
     <div class="control-group">
         <label>2. Select Route Plan:</label>
         <select id="routeSelect" onchange="drawRoute(this.value)" disabled>
-            <option value="">-- Waiting for Excel file... --</option>
+            <option value="">-- Choose Route Plan --</option>
         </select>
     </div>
     
-    <div class="control-group" style="margin-top: 15px; margin-bottom: 5px;">
-        <label style="display: flex; align-items: center; gap: 6px; font-weight: normal; cursor: pointer;">
-            <input type="checkbox" id="optimizeRoute" onchange="drawRoute(document.getElementById('routeSelect').value)" checked>
-            Find Shortest Route (Auto-sort Stops)
-        </label>
-        <label style="display: flex; align-items: center; gap: 6px; font-weight: normal; cursor: pointer; margin-top: 8px;">
+    <div class="control-group box-solid-gray">
+        <label class="checkbox-row">
             <input type="checkbox" id="viaHanumangarh" onchange="drawRoute(document.getElementById('routeSelect').value)" checked>
             Guide Via Hanumangarh Road
         </label>
+        <label class="checkbox-row">
+            <input type="checkbox" id="optimizeRoute" onchange="drawRoute(document.getElementById('routeSelect').value)" checked>
+            Find Shortest Route (Optimize)
+        </label>
     </div>
     
-    <div class="control-group" style="margin-top: 10px; text-align: center;">
-        <span style="font-size: 14px; color: #dc2626; font-weight: bold; background: #fee2e2; padding: 5px 10px; border-radius: 5px; display: inline-block;">
-            💡 Wrong location? Drag any marker to move it.
-        </span>
+    <div class="box-tip">
+        💡 You can click & drag map markers to adjust layout.
     </div>
 
-    <button class="btn-export" onclick="exportToJPG()">📷 Save SD JPG (1024x768)</button>
+    <div class="buttons-container">
+        <button class="btn btn-blue" onclick="exportCoordinates()">💾 Export Adjusted Coordinates</button>
+        <button class="btn btn-green" onclick="exportToJPG()">📷 Export to JPG (4:3 SD)</button>
+    </div>
 </div>
 
-<div id="export-container">
-    <div class="top-header">
-        <h1 id="lblRouteTitle">81-Abohar Election 2027</h1>
-        <h2 id="lblRoutePath">Load Excel file to begin route planning</h2>
-    </div>
+<!-- MAIN MAP AREA -->
+<div id="main-area">
+    <div id="export-container">
+        <div class="top-header">
+            <h1 id="lblRouteTitle">81-Abohar Route Plan</h1>
+            <h2 id="lblRoutePath">Upload Excel file or select a route</h2>
+        </div>
 
-    <div class="compass">
-        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <polygon points="50,5 65,45 50,55 35,45" fill="#dc2626" />
-            <polygon points="50,95 65,55 50,45 35,55" fill="#e5e7eb" />
-            <text x="50" y="12" font-size="16" font-family="Arial" font-weight="bold" fill="white" text-anchor="middle">N</text>
-            <text x="50" y="98" font-size="14" font-family="Arial" font-weight="bold" fill="black" text-anchor="middle">S</text>
-            <text x="8" y="55" font-size="14" font-family="Arial" font-weight="bold" fill="black">W</text>
-            <text x="82" y="55" font-size="14" font-family="Arial" font-weight="bold" fill="black">E</text>
-        </svg>
-    </div>
+        <div class="compass">
+            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <polygon points="50,5 65,45 50,55 35,45" fill="#dc2626" />
+                <polygon points="50,95 65,55 50,45 35,55" fill="#e5e7eb" />
+                <text x="50" y="12" font-size="16" font-family="Arial" font-weight="bold" fill="white" text-anchor="middle">N</text>
+                <text x="50" y="98" font-size="14" font-family="Arial" font-weight="bold" fill="black" text-anchor="middle">S</text>
+                <text x="8" y="55" font-size="14" font-family="Arial" font-weight="bold" fill="black">W</text>
+                <text x="82" y="55" font-size="14" font-family="Arial" font-weight="bold" fill="black">E</text>
+            </svg>
+        </div>
 
-    <div class="legend-panel">
-        <div class="legend-header">Legend</div>
-        <div class="legend-content">
-            <div class="legend-item">
-                <div class="legend-icon" style="background: var(--start-green);">S</div>
-                <span>Starting station</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-icon" style="background: var(--route-blue);">1</div>
-                <span>Intermediate station</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-icon" style="background: var(--halt-red); border-radius: 50% 50% 50% 0; transform: rotate(-45deg);"><span style="transform: rotate(45deg);">2</span></div>
-                <span>Final stop of route</span>
+        <div class="legend-panel">
+            <div class="legend-header">Legend</div>
+            <div class="legend-content">
+                <div class="legend-item">
+                    <div class="legend-icon" style="background: var(--start-green);">S</div>
+                    <span>Starting station</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-icon" style="background: var(--route-blue);">1</div>
+                    <span>Intermediate station</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-icon" style="background: var(--halt-red); border-radius: 50% 50% 50% 0; transform: rotate(-45deg);"><span style="transform: rotate(45deg);">2</span></div>
+                    <span>Final stop of route</span>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="summary-panel" id="summaryPanel">
-        <b>Total Distance:</b> <span id="lblDist">0 km</span><br>
-        <b>Total Time:</b> <span id="lblTime">0 min</span><br>
-        <b>No. of Villages:</b> <span id="lblVills">0</span><br>
-        <b>No. of Parties:</b> <span id="lblParties">0</span>
-    </div>
+        <div class="summary-panel" id="summaryPanel">
+            <b>Total Distance:</b> <span id="lblDist">0 km</span><br>
+            <b>Total Time:</b> <span id="lblTime">0 min</span><br>
+            <b>No. of Villages:</b> <span id="lblVills">0</span><br>
+            <b>No. of Parties:</b> <span id="lblParties">0</span>
+        </div>
 
-    <div id="map"></div>
+        <div id="map"></div>
+    </div>
 </div>
 
-
 <script>
-    // --- Scale the 1024x768 Container to fit the screen visually ---
+    // --- Scale the 1024x768 Container to fit the main content area visually ---
     function resizeContainer() {
         const container = document.getElementById('export-container');
-        // Calculate scale factor (leaving some padding for the new wider control panel)
-        const scale = Math.min((window.innerWidth - 350) / 1024, (window.innerHeight - 40) / 768);
-        if (scale < 1.25) {
-            container.style.transform = `scale(${scale})`;
-        } else {
-             container.style.transform = `scale(1.25)`; // Magnify map on screen by 125%
-        }
+        const mainArea = document.getElementById('main-area');
+        
+        // Calculate scale factor using just the right side's width and height
+        const availableWidth = mainArea.clientWidth - 60; // 30px padding on sides
+        const availableHeight = mainArea.clientHeight - 60; // 30px padding on top/bot
+        
+        const scale = Math.min(availableWidth / 1024, availableHeight / 768);
+        container.style.transform = `scale(${scale})`;
     }
     window.addEventListener('resize', resizeContainer);
     window.addEventListener('load', resizeContainer);
@@ -177,6 +274,7 @@
 
     let routesData = [];
     let manualCorrections = {}; 
+    let currentStopData = []; // Store current markers for coord export
 
     const dispatchCenter = [30.133217856064057, 74.20811582791919];
     const hanumangarhRoadPoint = [30.1190, 74.1980];
@@ -295,10 +393,11 @@
 
     async function drawRoute(routeId) {
         currentLayerGroup.clearLayers();
+        currentStopData = [];
         if (!routeId) {
             document.getElementById('summaryPanel').style.display = 'none';
-            document.getElementById('lblRouteTitle').textContent = "81-Abohar Election 2027";
-            document.getElementById('lblRoutePath').textContent = "Select a route plan from the control panel to view details";
+            document.getElementById('lblRouteTitle').textContent = "81-Abohar Route Plan";
+            document.getElementById('lblRoutePath').textContent = "Upload Excel file or select a route";
             map.setView(dispatchCenter, 14);
             return;
         }
@@ -390,7 +489,7 @@
                 continue;
             }
             let collision = true;
-            let scatterRadius = 0.005; // Base radius for scattering
+            let scatterRadius = 0.005; 
             let attempts = 0;
             let originalLat = s.coords[0];
             let originalLng = s.coords[1];
@@ -403,12 +502,12 @@
                     if (dist < 0.005) { 
                         collision = true;
                         isShifted = true;
-                        let a = attempts * (Math.PI / 4); // Fanning out in 8 directions around the center
+                        let a = attempts * (Math.PI / 4); 
                         s.coords[0] = originalLat + (scatterRadius * Math.cos(a));
                         s.coords[1] = originalLng + (scatterRadius * Math.sin(a));
                         attempts++;
                         if (attempts % 8 === 0) {
-                            scatterRadius += 0.0025; // Expand ring outward
+                            scatterRadius += 0.0025; 
                         }
                         break;
                     }
@@ -438,6 +537,8 @@
             optimizedStops.forEach((s, idx) => s.isFinal = (idx === optimizedStops.length - 1));
             stopData = optimizedStops;
         }
+
+        currentStopData = stopData; // Save for coordinate export
 
         L.marker(dispatchCenter, {
             icon: L.divIcon({ className: 'custom-div-icon', html: `<div class="marker-circle" style="background: var(--start-green);">S</div>`, iconSize: [22, 22] })
@@ -484,9 +585,7 @@
             }
 
             if (stop.shiftedFrom) {
-                // Draw dotted line to original location
                 L.polyline([stop.shiftedFrom, stop.coords], {color: '#4b5563', weight: 2, dashArray: '4,4', opacity: 0.8}).addTo(currentLayerGroup);
-                // Draw small anchor point
                 L.circleMarker(stop.shiftedFrom, {radius: 3, color: '#1e3a8a', fillColor: '#fff', fillOpacity: 1, weight: 2}).addTo(currentLayerGroup);
             }
 
@@ -528,6 +627,27 @@
             document.getElementById('lblDist').textContent = `N/A`;
             document.getElementById('lblTime').textContent = `N/A`;
         }
+    }
+
+    function exportCoordinates() {
+        if (!currentStopData || currentStopData.length === 0) {
+            alert("No route selected to export.");
+            return;
+        }
+        
+        let csvContent = "data:text/csv;charset=utf-8,";
+        csvContent += "Polling Booth,Latitude,Longitude\n";
+        currentStopData.forEach(function(s) {
+            csvContent += `"${s.originalName}",${s.coords[0]},${s.coords[1]}\n`;
+        });
+        
+        var encodedUri = encodeURI(csvContent);
+        var link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `Route_${document.getElementById('routeSelect').value || "Coordinates"}_Adjusted.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
 
     function exportToJPG() {
